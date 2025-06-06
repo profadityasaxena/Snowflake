@@ -37,8 +37,9 @@ COPY INTO tasty_bytes_sample_data.raw_pos.menu
 FROM @tasty_bytes_sample_data.public.blob_stage/raw_pos/menu/;
 
 
-SELECT max(sale_price_usd) FROM tasty_bytes_sample_data.raw_pos.menu
-WHERE item_category = 'Snack'
-AND item_subcategory IN ('Hot Option','Warm Option', 'Cold Option')
-GROUP BY item_subcategory
+SELECT ITEM_SUBCATEGORY,
+MAX(SALE_PRICE_USD)
+FROM tasty_bytes_sample_data.raw_pos.menu
+GROUP BY 1
+ORDER BY 2 DESC;
 
