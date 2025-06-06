@@ -1,3 +1,35 @@
+
+
+# ❄️ Snowflake Course by Aditya Saxena
+
+Welcome to this curated course on **Snowflake**, designed for data professionals, engineers, and analysts who want to master this cloud-native data warehousing platform. This course is structured to provide both theoretical understanding and hands-on experience.
+
+---
+
+## 📘 What is Snowflake?
+
+**Snowflake** is a fully managed, cloud-native **data warehouse-as-a-service (DWaaS)** that runs on major cloud platforms like AWS, Azure, and Google Cloud. It provides a powerful platform for:
+
+- **Data warehousing** and analytics
+- **Data lake integration**
+- **Data sharing** across organizations
+- **Serverless scaling** of compute and storage independently
+- **SQL-based querying** and integration with modern data tools
+
+Unlike traditional warehouses, Snowflake uses a **multi-cluster shared data architecture** that separates compute from storage, enabling virtually unlimited concurrent workloads with minimal latency. It supports **structured, semi-structured (e.g., JSON, Avro, Parquet)**, and **unstructured** data natively.
+
+---
+
+## 🎯 Key Features
+
+- Fully managed (no infrastructure to manage)
+- Instant scalability and auto-suspend compute
+- Seamless integration with BI tools (Tableau, Looker, Power BI)
+- Built-in security, encryption, and access controls
+- Support for Snowpark (Python, Java, Scala) and UDFs
+- Zero-copy cloning, time travel, and data sharing
+
+
 ### ✅ Basics
 
 1. **What is Snowflake?**  
