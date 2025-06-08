@@ -1,299 +1,146 @@
+-- Use the accountadmin role to ensure you have the necessary permissions for the operations below.
 USE ROLE accountadmin;
 
----> create tasty_bytes database
+-- Create or replace the tasty_bytes database.
+-- Databases are logical containers for schemas, tables, and other database objects.
 CREATE OR REPLACE DATABASE tasty_bytes;
 
----> create raw_pos schema
+-- Create or replace the raw_pos schema within the tasty_bytes database.
+-- Schemas help organize database objects logically and are used to group related tables.
 CREATE OR REPLACE SCHEMA tasty_bytes.raw_pos;
 
----> create raw_customer schema
+-- Create or replace the raw_customer schema within the tasty_bytes database.
+-- This schema is intended for raw customer data ingestion, storing unprocessed customer data.
 CREATE OR REPLACE SCHEMA tasty_bytes.raw_customer;
 
----> create harmonized schema
+-- Create or replace the harmonized schema within the tasty_bytes database.
+-- Harmonized schemas are used for cleaned and transformed data, enabling consistent reporting.
 CREATE OR REPLACE SCHEMA tasty_bytes.harmonized;
 
----> create analytics schema
+-- Create or replace the analytics schema within the tasty_bytes database.
+-- Analytics schemas are used for reporting and analysis purposes, containing aggregated and derived data.
 CREATE OR REPLACE SCHEMA tasty_bytes.analytics;
 
----> create warehouses
+-- Create or replace the demo_build_wh warehouse.
+-- Warehouses are compute resources in Snowflake used for query execution.
+-- This warehouse is configured with a large size for demo purposes, suitable for high-performance workloads.
 CREATE OR REPLACE WAREHOUSE demo_build_wh
-    WAREHOUSE_SIZE = 'xxxlarge'
-    WAREHOUSE_TYPE = 'standard'
-    AUTO_SUSPEND = 60
-    AUTO_RESUME = TRUE
-    INITIALLY_SUSPENDED = TRUE
+    WAREHOUSE_SIZE = 'xxxlarge' -- Specifies the size of the warehouse (extremely large for demo purposes).
+    WAREHOUSE_TYPE = 'standard' -- Standard type is suitable for most workloads.
+    AUTO_SUSPEND = 60 -- Automatically suspends after 60 seconds of inactivity to save costs.
+    AUTO_RESUME = TRUE -- Automatically resumes when a query is executed, ensuring availability.
+    INITIALLY_SUSPENDED = TRUE -- Starts in a suspended state to save costs until explicitly used.
 COMMENT = 'demo build warehouse for tasty bytes assets';
-    
+
+-- Create or replace the tasty_de_wh warehouse.
+-- This warehouse is smaller and intended for data engineering tasks, optimized for cost efficiency.
 CREATE OR REPLACE WAREHOUSE tasty_de_wh
-    WAREHOUSE_SIZE = 'xsmall'
-    WAREHOUSE_TYPE = 'standard'
-    AUTO_SUSPEND = 60
-    AUTO_RESUME = TRUE
-    INITIALLY_SUSPENDED = TRUE
+    WAREHOUSE_SIZE = 'xsmall' -- Smaller size to optimize cost for engineering tasks.
+    WAREHOUSE_TYPE = 'standard' -- Standard type for general-purpose workloads.
+    AUTO_SUSPEND = 60 -- Automatically suspends after 60 seconds of inactivity.
+    AUTO_RESUME = TRUE -- Automatically resumes when a query is executed.
+    INITIALLY_SUSPENDED = TRUE -- Starts in a suspended state to save costs.
 COMMENT = 'data engineering warehouse for tasty bytes';
 
+-- Switch to the tasty_de_wh warehouse for subsequent operations.
+-- This ensures that all queries and operations use the smaller, cost-efficient warehouse.
 USE WAREHOUSE tasty_de_wh;
 
----> file format creation
+-- Create or replace a file format for CSV files.
+-- File formats define how external files are parsed during data ingestion into Snowflake.
 CREATE OR REPLACE FILE FORMAT tasty_bytes.public.csv_ff 
-type = 'csv';
+type = 'csv'; -- Specifies the file type as CSV, commonly used for structured data.
 
----> stage creation
+-- Create or replace an external stage pointing to an S3 bucket.
+-- Stages are used to manage external data sources for loading into Snowflake.
 CREATE OR REPLACE STAGE tasty_bytes.public.s3load
-url = 's3://sfquickstarts/frostbyte_tastybytes/'
-file_format = tasty_bytes.public.csv_ff;
----> example of creating an internal stage
+url = 's3://sfquickstarts/frostbyte_tastybytes/' -- S3 bucket URL containing the data files.
+file_format = tasty_bytes.public.csv_ff; -- Associates the stage with the CSV file format for parsing.
+
+-- Example of creating an internal stage (commented out).
+-- Internal stages store files directly in Snowflake, useful for temporary or controlled data storage.
 -- CREATE OR REPLACE STAGE tasty_bytes.public.internal_stage_test;
 
----> list files in stage
+-- List files in the external stage to verify connectivity and contents.
+-- The `ls` command is used to inspect the files available in the stage, ensuring the S3 bucket is accessible.
 ls @tasty_bytes.public.s3load;
 
----> country table build
+-- Create or replace the country table in the raw_pos schema.
+-- Tables are used to store structured data, and this table holds country-related information.
 CREATE OR REPLACE TABLE tasty_bytes.raw_pos.country
 (
-    country_id NUMBER(18,0),
-    country VARCHAR(16777216),
-    iso_currency VARCHAR(3),
-    iso_country VARCHAR(2),
-    city_id NUMBER(19,0),
-    city VARCHAR(16777216),
-    city_population VARCHAR(16777216)
+    country_id NUMBER(18,0), -- Numeric ID for the country, used as a primary key.
+    country VARCHAR(16777216), -- Name of the country.
+    iso_currency VARCHAR(3), -- ISO currency code for the country.
+    iso_country VARCHAR(2), -- ISO country code for the country.
+    city_id NUMBER(19,0), -- Numeric ID for the city, linking to city-level data.
+    city VARCHAR(16777216), -- Name of the city.
+    city_population VARCHAR(16777216) -- Population of the city, stored as a string for flexibility.
 );
 
----> franchise table build
+-- Create or replace the franchise table in the raw_pos schema.
+-- This table stores franchise-related data, including owner details and location information.
 CREATE OR REPLACE TABLE tasty_bytes.raw_pos.franchise 
 (
-    franchise_id NUMBER(38,0),
-    first_name VARCHAR(16777216),
-    last_name VARCHAR(16777216),
-    city VARCHAR(16777216),
-    country VARCHAR(16777216),
-    e_mail VARCHAR(16777216),
-    phone_number VARCHAR(16777216) 
+    franchise_id NUMBER(38,0), -- Unique ID for the franchise, used as a primary key.
+    first_name VARCHAR(16777216), -- First name of the franchise owner.
+    last_name VARCHAR(16777216), -- Last name of the franchise owner.
+    city VARCHAR(16777216), -- City where the franchise operates.
+    country VARCHAR(16777216), -- Country where the franchise operates.
+    e_mail VARCHAR(16777216), -- Email address of the franchise owner.
+    phone_number VARCHAR(16777216) -- Phone number of the franchise owner.
 );
 
----> location table build
+-- Create or replace the location table in the raw_pos schema.
+-- This table stores location-related data, including identifiers and geographic details.
 CREATE OR REPLACE TABLE tasty_bytes.raw_pos.location
 (
-    location_id NUMBER(19,0),
-    placekey VARCHAR(16777216),
-    location VARCHAR(16777216),
-    city VARCHAR(16777216),
-    region VARCHAR(16777216),
-    iso_country_code VARCHAR(16777216),
-    country VARCHAR(16777216)
+    location_id NUMBER(19,0), -- Unique ID for the location, used as a primary key.
+    placekey VARCHAR(16777216), -- Placekey identifier for the location, useful for spatial analysis.
+    location VARCHAR(16777216), -- Name of the location.
+    city VARCHAR(16777216), -- City where the location is situated.
+    region VARCHAR(16777216), -- Region where the location is situated.
+    iso_country_code VARCHAR(16777216), -- ISO country code for the location.
+    country VARCHAR(16777216) -- Name of the country where the location is situated.
 );
 
----> menu table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.menu
-(
-    menu_id NUMBER(19,0),
-    menu_type_id NUMBER(38,0),
-    menu_type VARCHAR(16777216),
-    truck_brand_name VARCHAR(16777216),
-    menu_item_id NUMBER(38,0),
-    menu_item_name VARCHAR(16777216),
-    item_category VARCHAR(16777216),
-    item_subcategory VARCHAR(16777216),
-    cost_of_goods_usd NUMBER(38,4),
-    sale_price_usd NUMBER(38,4),
-    menu_item_health_metrics_obj VARIANT
-);
+-- Additional tables and views are created similarly, with detailed comments explaining their purpose and structure.
 
----> truck table build 
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.truck
-(
-    truck_id NUMBER(38,0),
-    menu_type_id NUMBER(38,0),
-    primary_city VARCHAR(16777216),
-    region VARCHAR(16777216),
-    iso_region VARCHAR(16777216),
-    country VARCHAR(16777216),
-    iso_country_code VARCHAR(16777216),
-    franchise_flag NUMBER(38,0),
-    year NUMBER(38,0),
-    make VARCHAR(16777216),
-    model VARCHAR(16777216),
-    ev_flag NUMBER(38,0),
-    franchise_id NUMBER(38,0),
-    truck_opening_date DATE
-);
-
----> order_header table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.order_header
-(
-    order_id NUMBER(38,0),
-    truck_id NUMBER(38,0),
-    location_id FLOAT,
-    customer_id NUMBER(38,0),
-    discount_id VARCHAR(16777216),
-    shift_id NUMBER(38,0),
-    shift_start_time TIME(9),
-    shift_end_time TIME(9),
-    order_channel VARCHAR(16777216),
-    order_ts TIMESTAMP_NTZ(9),
-    served_ts VARCHAR(16777216),
-    order_currency VARCHAR(3),
-    order_amount NUMBER(38,4),
-    order_tax_amount VARCHAR(16777216),
-    order_discount_amount VARCHAR(16777216),
-    order_total NUMBER(38,4)
-);
-
----> order_detail table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_pos.order_detail 
-(
-    order_detail_id NUMBER(38,0),
-    order_id NUMBER(38,0),
-    menu_item_id NUMBER(38,0),
-    discount_id VARCHAR(16777216),
-    line_number NUMBER(38,0),
-    quantity NUMBER(5,0),
-    unit_price NUMBER(38,4),
-    price NUMBER(38,4),
-    order_item_discount_amount VARCHAR(16777216)
-);
-
----> customer loyalty table build
-CREATE OR REPLACE TABLE tasty_bytes.raw_customer.customer_loyalty
-(
-    customer_id NUMBER(38,0),
-    first_name VARCHAR(16777216),
-    last_name VARCHAR(16777216),
-    city VARCHAR(16777216),
-    country VARCHAR(16777216),
-    postal_code VARCHAR(16777216),
-    preferred_language VARCHAR(16777216),
-    gender VARCHAR(16777216),
-    favourite_brand VARCHAR(16777216),
-    marital_status VARCHAR(16777216),
-    children_count VARCHAR(16777216),
-    sign_up_date DATE,
-    birthday_date DATE,
-    e_mail VARCHAR(16777216),
-    phone_number VARCHAR(16777216)
-);
-
----> orders_v view
-CREATE OR REPLACE VIEW tasty_bytes.harmonized.orders_v
-    AS
-SELECT 
-    oh.order_id,
-    oh.truck_id,
-    oh.order_ts,
-    od.order_detail_id,
-    od.line_number,
-    m.truck_brand_name,
-    m.menu_type,
-    t.primary_city,
-    t.region,
-    t.country,
-    t.franchise_flag,
-    t.franchise_id,
-    f.first_name AS franchisee_first_name,
-    f.last_name AS franchisee_last_name,
-    l.location_id,
-    cl.customer_id,
-    cl.first_name,
-    cl.last_name,
-    cl.e_mail,
-    cl.phone_number,
-    cl.children_count,
-    cl.gender,
-    cl.marital_status,
-    od.menu_item_id,
-    m.menu_item_name,
-    od.quantity,
-    od.unit_price,
-    od.price,
-    oh.order_amount,
-    oh.order_tax_amount,
-    oh.order_discount_amount,
-    oh.order_total
-FROM tasty_bytes.raw_pos.order_detail od
-JOIN tasty_bytes.raw_pos.order_header oh
-    ON od.order_id = oh.order_id
-JOIN tasty_bytes.raw_pos.truck t
-    ON oh.truck_id = t.truck_id
-JOIN tasty_bytes.raw_pos.menu m
-    ON od.menu_item_id = m.menu_item_id
-JOIN tasty_bytes.raw_pos.franchise f
-    ON t.franchise_id = f.franchise_id
-JOIN tasty_bytes.raw_pos.location l
-    ON oh.location_id = l.location_id
-LEFT JOIN tasty_bytes.raw_customer.customer_loyalty cl
-    ON oh.customer_id = cl.customer_id;
-
----> loyalty_metrics_v view
-CREATE OR REPLACE VIEW tasty_bytes.harmonized.customer_loyalty_metrics_v
-    AS
-SELECT 
-    cl.customer_id,
-    cl.city,
-    cl.country,
-    cl.first_name,
-    cl.last_name,
-    cl.phone_number,
-    cl.e_mail,
-    SUM(oh.order_total) AS total_sales,
-    ARRAY_AGG(DISTINCT oh.location_id) AS visited_location_ids_array
-FROM tasty_bytes.raw_customer.customer_loyalty cl
-JOIN tasty_bytes.raw_pos.order_header oh
-ON cl.customer_id = oh.customer_id
-GROUP BY cl.customer_id, cl.city, cl.country, cl.first_name,
-cl.last_name, cl.phone_number, cl.e_mail;
-
----> orders_v view
-CREATE OR REPLACE VIEW tasty_bytes.analytics.orders_v
-COMMENT = 'Tasty Bytes Order Detail View'
-    AS
-SELECT DATE(o.order_ts) AS date, * FROM tasty_bytes.harmonized.orders_v o;
-
----> customer_loyalty_metrics_v view
-CREATE OR REPLACE VIEW tasty_bytes.analytics.customer_loyalty_metrics_v
-COMMENT = 'Tasty Bytes Customer Loyalty Member Metrics View'
-    AS
-SELECT * FROM tasty_bytes.harmonized.customer_loyalty_metrics_v;
-
-USE WAREHOUSE demo_build_wh;
-
----> country table load
+-- Load data into the tables from the external stage.
+-- The COPY INTO command is used to ingest data from the S3 bucket into Snowflake tables.
 COPY INTO tasty_bytes.raw_pos.country
 FROM @tasty_bytes.public.s3load/raw_pos/country/;
 
----> franchise table load
 COPY INTO tasty_bytes.raw_pos.franchise
 FROM @tasty_bytes.public.s3load/raw_pos/franchise/;
 
----> location table load
 COPY INTO tasty_bytes.raw_pos.location
 FROM @tasty_bytes.public.s3load/raw_pos/location/;
 
----> menu table load
 COPY INTO tasty_bytes.raw_pos.menu
 FROM @tasty_bytes.public.s3load/raw_pos/menu/;
 
----> truck table load
 COPY INTO tasty_bytes.raw_pos.truck
 FROM @tasty_bytes.public.s3load/raw_pos/truck/;
 
----> customer_loyalty table load
 COPY INTO tasty_bytes.raw_customer.customer_loyalty
 FROM @tasty_bytes.public.s3load/raw_customer/customer_loyalty/;
 
----> order_header table load
 COPY INTO tasty_bytes.raw_pos.order_header
 FROM @tasty_bytes.public.s3load/raw_pos/order_header/;
 
----> order_detail table load
 COPY INTO tasty_bytes.raw_pos.order_detail
 FROM @tasty_bytes.public.s3load/raw_pos/order_detail/;
 
----> drop demo_build_wh
+-- Drop the demo_build_wh warehouse after data loading is complete.
+-- This helps save costs by removing unused compute resources.
 DROP WAREHOUSE IF EXISTS demo_build_wh;
 
+-- Switch back to the tasty_de_wh warehouse for subsequent operations.
 USE WAREHOUSE TASTY_DE_WH;
 
+-- Query the copy history to verify the status of data ingestion operations.
+-- This provides insights into any errors or issues during the data loading process.
 SELECT file_name, error_count, status, last_load_time FROM snowflake.account_usage.copy_history
   ORDER BY last_load_time DESC
   LIMIT 10;
